@@ -5,8 +5,14 @@ const { MongoClient, ObjectId } = require("mongodb");
 const URL = "mongodb+srv://9d27shravaniyadav_db_user:d9TizNIByTQINoCY@cluster0.i6kamy3.mongodb.net/?appName=Cluster0";
 
 const app = express();
+
 app.use(express.json());
-app.use(cors());
+
+// ✅ FIXED CORS (important for Render + frontend)
+app.use(cors({
+	origin: "*",
+	methods: ["GET", "POST", "PUT", "DELETE"],
+}));
 
 // ADD MOVIE
 app.post("/sm", async (req, res) => {
@@ -24,8 +30,9 @@ app.post("/sm", async (req, res) => {
 		};
 
 		const response = await coll.insertOne(doc);
+
+		await con.close();
 		res.send(response);
-		con.close();
 	} catch (error) {
 		res.send(error);
 	}
@@ -41,9 +48,9 @@ app.get("/gm", async (req, res) => {
 		const coll = db.collection("movies");
 
 		const response = await coll.find().toArray();
-		res.send(response);
 
-		con.close();
+		await con.close();
+		res.send(response);
 	} catch (error) {
 		res.send(error);
 	}
@@ -58,18 +65,18 @@ app.delete("/dm", async (req, res) => {
 		const db = con.db("movies1july26");
 		const coll = db.collection("movies");
 
-		const doc = { _id: new ObjectId(req.body._id) };
+		const filter = { _id: new ObjectId(req.body._id) };
 
-		const response = await coll.deleteOne(doc);
+		const response = await coll.deleteOne(filter);
+
+		await con.close();
 		res.send(response);
-
-		con.close();
 	} catch (error) {
 		res.send(error);
 	}
 });
 
-// UPDATE MOVIE
+// UPDATE MOVIE (toggle watched)
 app.put("/um", async (req, res) => {
 	try {
 		const con = new MongoClient(URL);
@@ -86,9 +93,8 @@ app.put("/um", async (req, res) => {
 			$set: { watched: !movieDoc.watched }
 		});
 
+		await con.close();
 		res.send(response);
-
-		con.close();
 	} catch (error) {
 		res.send(error);
 	}
